@@ -1,0 +1,7 @@
+ckpt/
+**__pycache__
+.idea/
+**ipynb_checkpoints/
+logs/
+wandb/
+log_info.log
