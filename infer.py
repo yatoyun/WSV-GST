@@ -1,10 +1,12 @@
-import torch
 import time
+from test import *
+
 import numpy as np
-from sklearn.metrics import auc, roc_curve, precision_recall_curve
+import torch
+from sklearn.metrics import auc, precision_recall_curve, roc_curve
 
 from utils import fixed_smooth, slide_smooth
-from test import *
+
 
 def pad_tensor(tensor, max_seqlen):
     batch_size, num_frames, feature_dim = tensor.size()
@@ -78,14 +80,87 @@ def infer_func(model, dataloader, gt, logger, cfg):
         abnormal_preds = list(abnormal_preds.cpu().detach().numpy())
         
         far = cal_false_alarm(normal_labels, normal_preds)
+        import matplotlib.pyplot as plt
+        import pandas as pd
+        from sklearn.metrics import (ConfusionMatrixDisplay, accuracy_score,
+                                     confusion_matrix)
+
+        # gt, pred
+        df = pd.DataFrame({'gt': gt, 'pred': np.repeat(pred, 16)})
+        df.to_csv(f'./csv/{cfg.dataset}_gt_pred.csv', index=False)
+        # gtが0の時のpredの値
+        pred_gt_0 = [p for p, g in zip(np.repeat(pred, 16), gt) if g == 0]
+
+        # gtが1の時のpredの値
+        pred_gt_1 = [p for p, g in zip(np.repeat(pred, 16), gt) if g == 1]
+
+        # ヒストグラムの作成
+        plt.figure()
+        plt.hist(pred_gt_0, bins=50, alpha=0.3, log=True, label='gt = 0', color='blue')
+        plt.hist(pred_gt_1, bins=50, alpha=0.3, log=True, label='gt = 1', color='red')
+
+        # グラフのラベル付け
+        plt.xlabel('pred (0 to 1)')
+        plt.ylabel('Frequency')
+        plt.title('Histogram of pred values')
+        plt.legend()
+
+        # 画像を保存
+        plt.savefig(f'./csv/{cfg.dataset}_histogram.png')
+        plt.close()
+
+        plt.figure()
+        # Convert predictions to binary using threshold of 0.5
+        binary_pred = [1 if p >= 0.5 else 0 for p in np.repeat(pred, 16)]
+
+        # Calculate confusion matrix
+        cm = confusion_matrix(gt, binary_pred)
+        acc = accuracy_score(gt, binary_pred)
+
+        # Plot confusion matrix
+        disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=[0, 1])
+        disp.plot(cmap=plt.cm.Blues)
+
+        # Save confusion matrix plot
+        plt.title('Confusion Matrix at 0.5 Threshold')
+        plt.savefig(f'./csv/{cfg.dataset}_confusion_matrix.png')
+        plt.close()
+
         # all
         fpr, tpr, _ = roc_curve(list(gt), np.repeat(pred, 16))
         roc_auc = auc(fpr, tpr)
+        
+        plt.figure()
+        plt.plot(fpr, tpr, color='darkorange', lw=2, label='ROC curve (area = %0.2f)' % roc_auc)
+        plt.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--')
+        plt.xlim([0.0, 1.0])
+        plt.ylim([0.0, 1.05])
+        plt.xlabel('False Positive Rate')
+        plt.ylabel('True Positive Rate')
+        plt.title('Receiver Operating Characteristic')
+        plt.legend(loc="lower right")
+        plt.savefig(f'./csv/{cfg.dataset}_roc_curve.png')  # ROC曲線の画像を保存
+        plt.close()
+
+        
         # anomaly
         fpr, tpr, _ = roc_curve(list(gt)[:len(abnormal_preds)*16], np.repeat(abnormal_preds, 16))
         ab_roc_auc = auc(fpr, tpr)
         pre, rec, _ = precision_recall_curve(list(gt), np.repeat(pred, 16))
         pr_auc = auc(rec, pre)
+        plt.figure()
+        plt.plot(rec, pre, color='blue', lw=2, label='PR curve (area = %0.2f)' % pr_auc)
+        plt.xlim([0.0, 1.0])
+        plt.ylim([0.0, 1.05])
+        plt.xlabel('Recall')
+        plt.ylabel('Precision')
+        plt.title('Precision-Recall Curve')
+        plt.legend(loc="lower left")
+        plt.savefig(f'./csv/{cfg.dataset}_pr_curve.png')  # PR曲線の画像を保存
+        plt.close()
+
+        # acc log
+        logger.info('offline Accuracy:{:.4f}'.format(acc))
 
     time_elapsed = time.time() - st
     logger.info('offline AUC:{:.4f} Anomaly-AUC:{:.4f} AP:{:.4f} FAR:{:.4f} | Complete in {:.0f}m {:.0f}s\n'.format(
