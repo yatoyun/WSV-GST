@@ -41,7 +41,7 @@ def build_config(dataset):
         cfg.margin = 100
         cfg.max_epoch = 6
 
-        cfg.clip_feat_prefix = '/home/yukaneko/dev/CLIP-TSA_dataset/ucf/features/'
+        cfg.clip_feat_prefix = '/mnt/c/Research/AbnormalDetection/AbnormalDetection/UMIL/'
         
         cfg.result_dir = './result/ucf/'
 
@@ -86,7 +86,7 @@ def build_config(dataset):
         cfg.margin = 100
         cfg.max_epoch = 20
         
-        cfg.clip_feat_prefix = '/home/yukaneko/dev/CLIP-TSA_dataset/xd/features/'
+        cfg.clip_feat_prefix = '/mnt/c/Research/AbnormalDetection/AbnormalDetection/UMIL/UCF/'
         
         cfg.result_dir = './result/xd/'
 

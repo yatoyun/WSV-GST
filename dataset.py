@@ -59,10 +59,13 @@ class UCFDataset(data.Dataset):
         t_feat = np.concatenate((bg_feat, fg_feat), axis=0)
         
         # load clip
-        clip_path_name = self.list[index].strip('\n').split('_x264')[0].replace('/', '/'+video_class_name+'/') + '_x264.npy'
+        clip_path_name = self.list[index].strip('\n').split('_x264')[0] + '_x264.npy'
         clip_path = os.path.join(self.clip_feat_prefix, clip_path_name)
         if self.pre_process and self.max_seqlen == 200 and not self.test_mode:
-            clip_path = clip_path.replace('train', 'train-200')
+            clip_path = clip_path.replace('train', 'UCF')
+        
+        if self.test_mode:
+            clip_path = clip_path.replace('test', 'UCF')
         
         clip_feat = np.array(np.load(clip_path), dtype=np.float32)
         
@@ -123,7 +126,7 @@ class XDataset(data.Dataset):
 
         feat_path = os.path.join(self.feat_prefix, self.list[index].strip('\n'))
         if self.pre_process and self.max_seqlen == 200 and not self.test_mode:
-            feat_path = feat_path.replace('train', 'train-200')
+            feat_path = feat_path.replace('UCF', 'train-200')
         
         v_feat = np.array(np.load(feat_path), dtype=np.float32)
         tokens = self.list[index].strip('\n').split('_label_')[-1].split('__')[0].split('-')
@@ -139,6 +142,9 @@ class XDataset(data.Dataset):
         clip_path = os.path.join(self.clip_feat_prefix, clip_path_name)
         if self.pre_process and self.max_seqlen == 200 and not self.test_mode:
             clip_path = clip_path.replace('train', 'train-200')
+        
+        if self.test_mode:
+            clip_path = clip_path.replace('test/', '')
         
         clip_feat = np.array(np.load(clip_path), dtype=np.float32)
         

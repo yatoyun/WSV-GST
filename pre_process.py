@@ -3,17 +3,17 @@ import tqdm
 import numpy as np
 from utils import process_feat
 
-dataset_name = "sh"  #"ucf", "xd"
+dataset_name = "ucf"  #"ucf", "xd"
 clip = True
 
 if clip:
-    train_path = f"../list/{dataset_name}/train-clip.list"
+    train_path = f"list/{dataset_name}/train-clip.list"
 
 else:
-    train_path = f"../list/{dataset_name}/train.list"
+    train_path = f"list/{dataset_name}/train.list"
 
 
-feat_prefix = f"../data/{dataset_name}-i3d"
+feat_prefix = f"data/{dataset_name}-i3d"
 
 train_list = list(open(train_path))
 
@@ -36,7 +36,7 @@ if not clip:
 
 
 else:
-    feat_prefix = train_list[0].split("train")[0]+"train-200/"
+    feat_prefix = train_list[0].split("UCF/")[0]+"train-200/"
     os.makedirs(feat_prefix, exist_ok=True)
 
     max_len = 200
